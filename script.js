@@ -217,5 +217,82 @@ formPesquisa?.addEventListener('submit',(e)=>{
     atualizarMenuAtivo();
 });
 
+//4.3 - SOLICITAR RESERVA
+// aplica RN simulada e registra no histórico
+formSolicitar?.addEventListener('submit',(e)=>{
+    e.preventDefault();
 
+    if(!usuarioAtual){
+        mostrarToast('Faça login antes de solicitar','warm');
+        location.hash="#secLogin";
+        atualizarMenuAtivo();
+        return;
+    }
 
+    if(!ultimoFiltroPesquisa){
+        mostrarToast('Pesquise a disponibilidade antes de solicitar');
+        location.hash = '#secPesquisa';
+        atualizarMenuAtivo();
+        return;
+    }
+
+    const{justificativa}=dadosDoForm(formSolicitar);
+
+    if(!justificativa){
+        mostrarToast('Descreva a justificativa','warm');
+        return;
+    }
+
+    //RN4 - Se login 'prof', aprova automaticamente a reserva
+    const status = usuarioAtual.professor ?'aprovada':'pendente';
+
+    const nova = {
+        ...ultimoFiltroPesquisa,
+        justificativa,
+        status,
+        autor:usuarioAtual.login
+    };
+
+    reserva.push(nova);
+    renderItemReserva(nova);
+    mostrarToast(status === 'aprovada' ?'Reserva aprovada automaticamente':'Reserva enviada para análise');
+
+    formSolicitar.reset();
+    location.hash = '#secHistorico';
+    atualizarMenuAtivo();
+})
+
+//4.4 - RENDERIZAÇÃO DO HISTÓRICO
+//aplico RN simulado e registro no histórico
+
+function renderItemReserva({recurso,data,hora,justificativa,status}){
+    if(listaReservas)return;
+
+    const li = document.createElement('li');
+    const quando = newDate('${data}T${hora}').toLocaleString('pt-br');
+
+    li innerHTML=`
+       <span><strong>${recurso}</strong> - ${quando}</span>
+       <span>${status==='aprovada' ? 'Aprovada' :statu ==='cancelada' ? 'Cancelada':'Pendente'}</span>`;
+
+    //clique para cancelar
+    li.addEventListener('click',()=>{
+        //impedir cancelamento
+        if(li.dataset.status === 'cancelada')return;
+        li.dataset status = 'cancelada';
+        li.lastElementChild.textContent = 'Cancelada';
+        mostrarToast('Reserva cancelada','warm');
+    });
+
+    listaReservas.appendChild(li); 
+
+}
+/*================================================================
+ 4) AJUSTES FINAIS DE ARRANQUE
+------------------------------------------------------------------
+Por quê? Garantir que link ativo apareça na carga ini
+================================================================*/
+
+document.addEventListener('DOMContentLoaded', ()=>{
+    atualizarMenuAtivo();
+}); 
